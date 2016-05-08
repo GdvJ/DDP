@@ -1,0 +1,79 @@
+---
+title: "Developing data products"
+author: "GdvJ"
+date: "8 may 2016"
+output: slidy_presentation
+---
+
+## Shiny application
+
+This application gives the user two types of data exploration for the Iris dataset. The application is based on an example that is made by Joe Cheng, which can be found here: http://shiny.rstudio.com/gallery/kmeans-example.html
+
+
+## Basic functionality
+The functionality of the application is based on four steps. 
+
+- Choose the variables for the x- and y axis
+- Initialize the number of clusters for the k-means algorithm
+- Explore the resulting clusters in the first chart
+- Explore the linear fit in the second chart
+
+## Ui.R code
+
+```{r, eval=FALSE}
+library(shiny)
+
+shinyUI(pageWithSidebar(
+  headerPanel('Iris dataset exploration'),
+  sidebarPanel(
+    selectInput('xcol', 'X Variable', names(iris)),
+    selectInput('ycol', 'Y Variable', names(iris),
+                selected=names(iris)[[2]]),
+    numericInput('clusters', 'Cluster count', 3,
+                 min = 1, max = 9)
+  ),
+  mainPanel(
+    plotOutput('plot1'),
+    plotOutput('plot2')
+  )
+))
+```
+
+## Server.R code
+
+```{r, eval=FALSE}
+library(shiny)
+
+palette(c("#E41A1C", "#377EB8", "#4DAF4A", "#984EA3",
+          "#FF7F00", "#FFFF33", "#A65628", "#F781BF", "#999999"))
+
+shinyServer(function(input, output, session) {
+  
+  # Combine the selected variables into a new data frame
+  selectedData <- reactive({
+    iris[, c(input$xcol, input$ycol)]
+  })
+  
+  clusters <- reactive({
+    kmeans(selectedData(), input$clusters)
+  })
+  
+  output$plot1 <- renderPlot({
+    par(mar = c(5.1, 4.1, 0, 1))
+    plot(selectedData(),
+         col = clusters()$cluster,
+         pch = 20, cex = 3)
+  })
+  
+  output$plot2 <- renderPlot({
+    par(mar = c(5.1, 4.1, 0, 1))
+    plot(selectedData())
+    abline(lm(iris[,input$ycol] ~ iris[,input$xcol] ))
+  })
+  
+  
+  
+  
+})
+```
+
